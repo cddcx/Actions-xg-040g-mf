@@ -43,7 +43,7 @@ on:
 
 env:
   REPO_URL: https://github.com/pbs05/ponwrt
-  REPO_BRANCH: master
+  REPO_BRANCH: snapshot-20261116
   FEEDS_CONF: feeds.conf.default
   CONFIG_FILE: ${{ github.event.inputs.Config }}
   DIY_P1_SH: diy-part1.sh
