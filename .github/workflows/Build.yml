@@ -130,7 +130,23 @@ jobs:
 
     - name: Update feeds
       run: cd Airoha && ./scripts/feeds update -a
-
+    # ---- 新增：应用 PR #6 的 PON 驱动补丁 ----
+    - name: Apply PON driver patches (PR #6)
+      run: |
+        set -e
+        PATCH_URL="https://github.com/pbs05/openwrt-pon-drivers/pull/6.patch"
+        PATCH_FILE="/tmp/pon-drivers.patch"
+        curl -fsSL "$PATCH_URL" -o "$PATCH_FILE"
+        cd Airoha/feeds/pon_drivers
+        if git apply --check "$PATCH_FILE" 2>/dev/null; then
+          git apply "$PATCH_FILE"
+          echo "PON driver patches applied."
+        elif git apply --reverse --check "$PATCH_FILE" 2>/dev/null; then
+          echo "PON driver patches already applied, skipping."
+        else
+          echo "Patch check failed, trying patch command with --forward..."
+          patch -p1 --forward < "$PATCH_FILE" || true
+        fi
     - name: Install feeds
       run: cd Airoha && ./scripts/feeds install -a
 
