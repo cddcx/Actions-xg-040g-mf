@@ -1,0 +1,41 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: 
+Date: 
+Subject: [PATCH] airoha-xpon: hardcode stock BWmap check control 0x00820000
+
+Force the XG-PON MAC to use the stock AN7583 BWmap check baseline
+0x00820000 (optional grant filters disabled) on every MAC initialization,
+before burst profiles are published. This matches the value that makes
+ACK/LOID authentication continue on AN7583/HWTC.
+
+The write is unconditional and applied in airoha_xpon_xgpon_start_control()
+right after clearing US_PROF_VLD. No module parameter or sysfs toggle is
+exposed; the behavior is compiled in.
+---
+diff --git a/airoha-xpon/src/airoha-xpon-regs.h b/airoha-xpon/src/airoha-xpon-regs.h
+index f505ff8..88d9fcc 100644
+--- a/airoha-xpon/src/airoha-xpon-regs.h
++++ b/airoha-xpon/src/airoha-xpon-regs.h
+@@ -137,6 +137,8 @@
+ #define AIROHA_XGPON_BWM_O2349_NO_PLOAMU_ONLY_GRANT BIT(15)
+ #define AIROHA_XGPON_BWM_O49_NO_DEFAULT_TCONT_GRANT BIT(16)
+ #define AIROHA_XGPON_BWM_O2349_CONTINUOUS_GRANT     BIT(17)
++/* Stock AN7583 BWmap check baseline: optional grant filters disabled. */
++#define AIROHA_XGPON_BWM_CHK_CTRL_STOCK 0x00820000
+ 
+ /*
+  * Bits 3 and 4 select hardware generation and verification of OMCI MIC with
+diff --git a/airoha-xpon/src/airoha-xpon-xgpon.c b/airoha-xpon/src/airoha-xpon-xgpon.c
+index fb86a12..e7661e4 100644
+--- a/airoha-xpon/src/airoha-xpon-xgpon.c
++++ b/airoha-xpon/src/airoha-xpon-xgpon.c
+@@ -415,6 +415,8 @@ static int airoha_xpon_xgpon_start_control(struct airoha_xpon *xpon)
+ 	airoha_xpon_xgpon_counters_start(xpon);
+ 	airoha_xpon_xgpon_release_mac_interfaces(xpon);
+ 	airoha_xgpon_write(xpon, AIROHA_XGPON_US_PROF_VLD, 0);
++	airoha_xgpon_write(xpon, AIROHA_XGPON_DBG_BWM_CHK_CTRL,
++	                   AIROHA_XGPON_BWM_CHK_CTRL_STOCK);
+ 	airoha_xgpon_update_bits(xpon, AIROHA_XGPON_RSP_TIME,
+ 	                         AIROHA_XGPON_RESPONSE_TIME_MASK, 0x551);
+ 	airoha_xgpon_update_bits(xpon, AIROHA_XGPON_O23_O4_PLOAMU_CTRL,
+--
