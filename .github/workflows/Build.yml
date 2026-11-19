@@ -128,29 +128,22 @@ jobs:
         cd Airoha
         $GITHUB_WORKSPACE/$DIY_P1_SH
 
+
+    # ---- 新增：替换 pon_drivers 的仓库地址 ----
+    - name: Point pon_drivers to zanbzx fork
+      run: |
+        cd Airoha
+        if grep -q '^src-git pon_drivers' feeds.conf.default; then
+          sed -i 's#^src-git pon_drivers .*#src-git pon_drivers https://github.com/zanbzx/openwrt-pon-drivers.git#' feeds.conf.default
+          echo "pon_drivers feed replaced with zanbzx fork."
+        else
+          echo "src-git pon_drivers https://github.com/zanbzx/openwrt-pon-drivers.git" >> feeds.conf.default
+          echo "pon_drivers feed appended (zanbzx fork)."
+        fi
+        grep 'pon_drivers' feeds.conf.default
+
     - name: Update feeds
       run: cd Airoha && ./scripts/feeds update -a
-
-    # ---- 新增：应用仓库内的自定义 PON 驱动补丁 ----
-    - name: Apply custom PON driver patch (pon.patch)
-      run: |
-        set -e
-        PATCH_FILE="$GITHUB_WORKSPACE/pon.patch"
-        if [ ! -f "$PATCH_FILE" ]; then
-          echo "::error::pon.patch not found at $PATCH_FILE"
-          exit 1
-        fi
-        cd Airoha/feeds/pon_drivers
-        if git apply --check "$PATCH_FILE" 2>/dev/null; then
-          git apply "$PATCH_FILE"
-          echo "pon.patch applied successfully."
-        elif git apply --reverse --check "$PATCH_FILE" 2>/dev/null; then
-          echo "pon.patch already applied, skipping."
-        else
-          echo "git apply --check failed, trying patch -p1 --forward ..."
-          patch -p1 --forward < "$PATCH_FILE"
-        fi
-
 
     
     - name: Install feeds
