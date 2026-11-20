@@ -168,6 +168,19 @@ jobs:
         else
           echo "package/onu-suite already exists, skip"
         fi
+
+    # ---- 新增：从 pbs05/openwrt-pon-userspace 获取 luci-app-pon/src ----
+    - name: Fetch luci-app-pon/src into onu-suite
+      run: |
+        set -e
+        TARGET="Airoha/package/onu-suite/luci-app-onu/src"
+        mkdir -p "$TARGET"
+        # GitHub 的 SVN 桥接，直接导出目录内容（无 .git）
+        svn export --force \
+          https://github.com/pbs05/openwrt-pon-userspace/trunk/luci-app-pon/src \
+          "$TARGET"
+        echo "luci-app-pon/src exported to $TARGET"
+        ls -la "$TARGET"
     
     - name: Install feeds
       run: cd Airoha && ./scripts/feeds install -a
