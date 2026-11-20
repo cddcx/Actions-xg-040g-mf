@@ -140,16 +140,7 @@ jobs:
           echo "src-git pon_drivers https://github.com/zanbzx/openwrt-pon-drivers.git" >> feeds.conf.default
           echo "pon_drivers feed appended (zanbzx fork)."
         fi
-        # 2) 删除 pon_userspace
-        if grep -q 'pon_userspace' feeds.conf.default; then
-          sed -i '/^[[:space:]]*src-[a-z-]*[[:space:]]\+pon_userspace\([[:space:]]\|$\)/d' feeds.conf.default
-          echo "pon_userspace removed"
-        else
-          echo "pon_userspace not present, skip"
-        fi
-
-        echo "---- feeds.conf.default (relevant lines) ----"
-        grep -E 'pon_drivers|pon_userspace' feeds.conf.default || true
+        grep -E 'pon_drivers' feeds.conf.default || true
 
     - name: Update feeds
       run: cd Airoha && ./scripts/feeds update -a
