@@ -144,7 +144,21 @@ jobs:
 
     - name: Update feeds
       run: cd Airoha && ./scripts/feeds update -a
-
+    # ---- 新增：删除 pon_userspace 下的冲突包 ----
+    - name: Remove conflicting pon_userspace packages
+      run: |
+        cd Airoha
+        for pkg in luci-app-pon luci-app-iptv; do
+          if [ -d "feeds/pon_userspace/$pkg" ]; then
+            rm -rf "feeds/pon_userspace/$pkg"
+            echo "Removed feeds/pon_userspace/$pkg"
+          else
+            echo "feeds/pon_userspace/$pkg not found, skip"
+          fi
+        done
+        if [ -d feeds/pon_userspace ] && [ -z "$(ls -A feeds/pon_userspace)" ]; then
+          rmdir feeds/pon_userspace && echo "Removed empty feeds/pon_userspace"
+        fi
     - name: Clone luci-app-onu into package/
       run: |
         cd Airoha
@@ -157,7 +171,15 @@ jobs:
     
     - name: Install feeds
       run: cd Airoha && ./scripts/feeds install -a
-
+    - name: Remove installed pon_userspace packages
+      run: |
+        cd Airoha
+        for pkg in luci-app-pon luci-app-iptv; do
+          if [ -e "package/feeds/pon_userspace/$pkg" ] || [ -L "package/feeds/pon_userspace/$pkg" ]; then
+            rm -rf "package/feeds/pon_userspace/$pkg"
+            echo "Removed package/feeds/pon_userspace/$pkg"
+          fi
+        done
     - name: Load custom configuration (DIY_P2_SH)
       run: |
         [ -e files ] && mv files Airoha/files
