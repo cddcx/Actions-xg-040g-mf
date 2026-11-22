@@ -119,20 +119,6 @@ jobs:
         cd Airoha
         $GITHUB_WORKSPACE/$DIY_P1_SH
 
-
-    # ---- 新增：替换 pon_drivers 的仓库地址 ----
-    - name: Point pon_drivers to zanbzx fork
-      run: |
-        cd Airoha
-        if grep -q '^src-git pon_drivers' feeds.conf.default; then
-          sed -i 's#^src-git pon_drivers .*#src-git pon_drivers https://github.com/zanbzx/openwrt-pon-drivers.git#' feeds.conf.default
-          echo "pon_drivers feed replaced with zanbzx fork."
-        else
-          echo "src-git pon_drivers https://github.com/zanbzx/openwrt-pon-drivers.git" >> feeds.conf.default
-          echo "pon_drivers feed appended (zanbzx fork)."
-        fi
-        grep -E 'pon_drivers' feeds.conf.default || true
-
     - name: Update feeds
       run: cd Airoha && ./scripts/feeds update -a
 
