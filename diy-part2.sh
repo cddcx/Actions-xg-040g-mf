@@ -15,9 +15,10 @@
 #git clone https://github.com/jerrykuku/luci-theme-argon.git feeds/luci/themes/luci-theme-argon
 
 # Remove luci-app-argon-config if exists
-#if [ -d feeds/luci/applications/luci-app-argon-config ]; then
-#  echo "Found luci-app-argon-config, removing ..."
-#  rm -rfv feeds/luci/applications/luci-app-argon-config
-#else
-#  echo "luci-app-argon-config not found, skip"
-#fi
+if [ -d feeds/luci_airoha/luci-app-clients ]; then
+  echo "Found luci-app-clients, moving ..."
+  mv feeds/luci_airoha/luci-app-clients feeds/luci_npu 
+  rm -rf feeds/luci_airoha
+else
+  echo "luci-app-clients not found, skip"
+fi
