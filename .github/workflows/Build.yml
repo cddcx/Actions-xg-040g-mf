@@ -31,15 +31,6 @@ on:
           - 'xg-040g-mf-ubi-mini.config'
           - 'ponwrt/configs/an7581.config'
           - 'ponwrt/configs/an7583.config'
-      IPTV:
-        description: '是否编译 luci-app-iptv'
-        required: true
-        default: 'keep'
-        type: choice
-        options:
-          - 'keep'
-          - 'enable'
-          - 'disable'
 
 env:
   REPO_URL: https://github.com/pbs05/ponwrt
@@ -144,87 +135,17 @@ jobs:
 
     - name: Update feeds
       run: cd Airoha && ./scripts/feeds update -a
-    # ---- 新增：删除 pon_userspace 下的冲突包 ----
-    - name: Remove conflicting pon_userspace packages
-      run: |
-        cd Airoha
-        for pkg in luci-app-pon luci-app-iptv; do
-          if [ -d "feeds/pon_userspace/$pkg" ]; then
-            rm -rf "feeds/pon_userspace/$pkg"
-            echo "Removed feeds/pon_userspace/$pkg"
-          else
-            echo "feeds/pon_userspace/$pkg not found, skip"
-          fi
-        done
-        if [ -d feeds/pon_userspace ] && [ -z "$(ls -A feeds/pon_userspace)" ]; then
-          rmdir feeds/pon_userspace && echo "Removed empty feeds/pon_userspace"
-        fi
-    - name: Clone luci-app-onu into package/
-      run: |
-        cd Airoha
-        if [ ! -d package/onu-suite ]; then
-          git clone --depth=1 https://github.com/rayniel/luci-app-onu.git package/onu-suite
-          echo "luci-app-onu cloned into package/onu-suite"
-        else
-          echo "package/onu-suite already exists, skip"
-        fi
 
-    - name: Fetch luci-app-pon/src into onu-suite
-      run: |
-        set -e
-        TMP=/tmp/pon-userspace
-        rm -rf "$TMP"
-        git clone --depth=1 --filter=blob:none --sparse \
-          https://github.com/pbs05/openwrt-pon-userspace.git "$TMP"
-        cd "$TMP"
-        git sparse-checkout set luci-app-pon/src
-        TARGET="$GITHUB_WORKSPACE/Airoha/package/onu-suite/luci-app-onu/src"
-        mkdir -p "$TARGET"
-        cp -a luci-app-pon/src/. "$TARGET/"
-        echo "luci-app-pon/src copied via sparse checkout"
-        ls -la "$TARGET"
-    
+
     - name: Install feeds
       run: cd Airoha && ./scripts/feeds install -a
-    - name: Remove installed pon_userspace packages
-      run: |
-        cd Airoha
-        for pkg in luci-app-pon luci-app-iptv; do
-          if [ -e "package/feeds/pon_userspace/$pkg" ] || [ -L "package/feeds/pon_userspace/$pkg" ]; then
-            rm -rf "package/feeds/pon_userspace/$pkg"
-            echo "Removed package/feeds/pon_userspace/$pkg"
-          fi
-        done
+
     - name: Load custom configuration (DIY_P2_SH)
       run: |
         [ -e files ] && mv files Airoha/files
         chmod +x $DIY_P2_SH
         cd Airoha
         $GITHUB_WORKSPACE/$DIY_P2_SH
-
-    - name: Configure IPTV
-      run: |
-        if [ -e "$CONFIG_FILE" ]; then
-          case "${{ github.event.inputs.IPTV }}" in
-            enable)
-              sed -i '/CONFIG_PACKAGE_luci-app-iptv/d' "$CONFIG_FILE"
-              [ -n "$(tail -c1 "$CONFIG_FILE")" ] && echo >> "$CONFIG_FILE"
-              echo "CONFIG_PACKAGE_luci-app-iptv=y" >> "$CONFIG_FILE"
-              echo "IPTV: enabled"
-              ;;
-            disable)
-              sed -i '/CONFIG_PACKAGE_luci-app-iptv/d' "$CONFIG_FILE"
-              [ -n "$(tail -c1 "$CONFIG_FILE")" ] && echo >> "$CONFIG_FILE"
-              echo "# CONFIG_PACKAGE_luci-app-iptv is not set" >> "$CONFIG_FILE"
-              echo "IPTV: disabled"
-              ;;
-            *)
-              echo "IPTV: keep (skip)"
-              ;;
-          esac
-        else
-          echo "Config file $CONFIG_FILE not found, skip"
-        fi
 
     - name: Free up disk space
       run: |
@@ -296,11 +217,6 @@ jobs:
       run: |
         echo "release_tag=$(date +"%Y.%m.%d-%H%M")" >> $GITHUB_OUTPUT
 
-        case "${{ github.event.inputs.IPTV }}" in
-          enable)  IPTV_TEXT="启用" ;;
-          disable) IPTV_TEXT="禁用" ;;
-          *)       IPTV_TEXT="不修改" ;;
-        esac
         case "${{ github.event.inputs.Cache }}" in
           true) CACHE_TEXT="启用" ;;
           *)    CACHE_TEXT="禁用" ;;
@@ -316,7 +232,6 @@ jobs:
         | 源码仓库 | [$REPO_URL]($REPO_URL) |
         | 源码分支 | \`$REPO_BRANCH\` |
         | 配置来源 | \`${{ github.event.inputs.Config }}\` |
-        | luci-app-iptv | $IPTV_TEXT |
         | 编译缓存 | $CACHE_TEXT |
 
         ### 附件说明
