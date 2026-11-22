@@ -39,6 +39,7 @@ env:
   CONFIG_FILE: ${{ github.event.inputs.Config }}
   DIY_P1_SH: diy-part1.sh
   DIY_P2_SH: diy-part2.sh
+  DIY_P3_SH: diy-part3.sh
   UPLOAD_BIN_DIR: false
   UPLOAD_RELEASE: true
   TZ: Asia/Shanghai
@@ -122,16 +123,22 @@ jobs:
     - name: Update feeds
       run: cd Airoha && ./scripts/feeds update -a
 
-
-    - name: Install feeds
-      run: cd Airoha && ./scripts/feeds install -a
-
     - name: Load custom configuration (DIY_P2_SH)
       run: |
         [ -e files ] && mv files Airoha/files
         chmod +x $DIY_P2_SH
         cd Airoha
         $GITHUB_WORKSPACE/$DIY_P2_SH
+
+    - name: Install feeds
+      run: cd Airoha && ./scripts/feeds install -a
+
+    - name: Load custom configuration (DIY_P3_SH)
+      run: |
+        [ -e files ] && mv files Airoha/files
+        chmod +x $DIY_P3_SH
+        cd Airoha
+        $GITHUB_WORKSPACE/$DIY_P3_SH
 
     - name: Free up disk space
       run: |
