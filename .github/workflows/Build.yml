@@ -52,7 +52,7 @@ jobs:
       contents: write
 
     steps:
-    - name: Check Server Performance
+    - name: 检查服务器性能
       run: |
         echo "警告⚠"
         echo "分配的服务器性能有限，若选择的插件过多，务必注意CPU性能！"
@@ -67,7 +67,7 @@ jobs:
         echo "--------------------------硬盘信息--------------------------"
         echo "硬盘数量: $(ls /dev/sd* 2>/dev/null | grep -v [1-9] | wc -l)" && df -hT
 
-    - name: Initialization environment
+    - name: 初始化环境
       timeout-minutes: 20
       env:
         DEBIAN_FRONTEND: noninteractive
@@ -82,17 +82,17 @@ jobs:
         sudo mkdir -p /workdir
         sudo chown "$USER:$(id -g)" /workdir
 
-    - name: Checkout
+    - name: 结束
       uses: actions/checkout@v7
 
-    - name: Clone source code
+    - name: 克隆源代码
       working-directory: /workdir
       run: |
         df -hT $PWD
         git clone -b $REPO_BRANCH --depth=1 $REPO_URL Airoha
         ln -sf /workdir/Airoha $GITHUB_WORKSPACE/Airoha
 
-    - name: Resolve config file
+    - name: 解析配置文件
       run: |
         if [ "${{ github.event.inputs.Config }}" = "ponwrt/configs/an7581.config" ]; then
           echo "Using an7581 config from cloned repo ..."
@@ -104,7 +104,7 @@ jobs:
           echo "CONFIG_FILE=orig-an7583.config" >> $GITHUB_ENV
         fi
 
-    - name: Cache Toolchain
+    - name: 缓存工具链
       uses: HiGarfield/cachewrtbuild@main
       if: github.event.inputs.Cache == 'true'
       with:
@@ -113,34 +113,34 @@ jobs:
         mixkey: 'airoha'
         prefix: ${{ github.workspace }}/Airoha
 
-    - name: Load custom feeds (DIY_P1_SH)
+    - name: 加载自定义源/提要 (DIY_P1_SH)
       run: |
         [ -e $FEEDS_CONF ] && mv $FEEDS_CONF Airoha/feeds.conf.default
         chmod +x $DIY_P1_SH
         cd Airoha
         $GITHUB_WORKSPACE/$DIY_P1_SH
 
-    - name: Update feeds
+    - name: 更新订阅源
       run: cd Airoha && ./scripts/feeds update -a
 
-    - name: Load custom configuration (DIY_P2_SH)
+    - name: 加载自定义配置 (DIY_P2_SH)
       run: |
         [ -e files ] && mv files Airoha/files
         chmod +x $DIY_P2_SH
         cd Airoha
         $GITHUB_WORKSPACE/$DIY_P2_SH
 
-    - name: Install feeds
+    - name: 安装扩展软件包源
       run: cd Airoha && ./scripts/feeds install -a
 
-    - name: Load custom configuration (DIY_P3_SH)
+    - name: 加载自定义配置 (DIY_P3_SH)
       run: |
         [ -e files ] && mv files Airoha/files
         chmod +x $DIY_P3_SH
         cd Airoha
         $GITHUB_WORKSPACE/$DIY_P3_SH
 
-    - name: Free up disk space
+    - name: ‌释放磁盘空间
       run: |
         set +e
         sudo apt-get -y clean
@@ -156,7 +156,7 @@ jobs:
         AVAIL=$(df -BG --output=avail /workdir | tail -n1 | tr -dc '0-9')
         echo "Build volume free space: ${AVAIL} GB"
 
-    - name: Download package
+    - name: 下载软件包
       id: package
       timeout-minutes: 90
       run: |
@@ -175,7 +175,7 @@ jobs:
         find dl -size -1024c -exec ls -l {} \;
         find dl -size -1024c -exec rm -f {} \;
 
-    - name: Compile the firmware
+    - name: 编译固件
       id: compile
       timeout-minutes: 180
       run: |
@@ -185,18 +185,18 @@ jobs:
         echo "status=success" >> $GITHUB_OUTPUT
         echo "FILE_DATE=_$(date +"%Y%m%d%H%M")" >> $GITHUB_ENV
 
-    - name: Check space usage
+    - name: 检查空间使用情况
       if: (!cancelled())
       run: df -hT
 
-    - name: Upload bin directory
+    - name: 上传 bin 目录
       uses: actions/upload-artifact@v7
       if: steps.compile.outputs.status == 'success' && env.UPLOAD_BIN_DIR == 'true'
       with:
         name: Airoha_bin${{ env.FILE_DATE }}
         path: Airoha/bin
 
-    - name: Organize files
+    - name: 整理文件
       id: organize
       if: steps.compile.outputs.status == 'success' && !cancelled()
       run: |
@@ -205,14 +205,14 @@ jobs:
         echo "FIRMWARE=$PWD" >> $GITHUB_ENV
         echo "status=success" >> $GITHUB_OUTPUT
 
-    - name: Upload firmware directory
+    - name: 上传固件目录
       uses: actions/upload-artifact@v7
       if: steps.organize.outputs.status == 'success' && !cancelled()
       with:
         name: Airoha_firmware${{ env.FILE_DATE }}
         path: ${{ env.FIRMWARE }}
 
-    - name: Generate release tag
+    - name: ‌生成发布标签
       id: tag
       if: env.UPLOAD_RELEASE == 'true' && steps.compile.outputs.status == 'success' && !cancelled()
       run: |
@@ -248,7 +248,7 @@ jobs:
         echo "status=success" >> $GITHUB_OUTPUT
         mv Airoha/.config Airoha/build.config
 
-    - name: Upload firmware to release
+    - name: 上传固件以发布
       uses: softprops/action-gh-release@v3
       if: steps.tag.outputs.status == 'success' && !cancelled()
       with:
@@ -260,7 +260,7 @@ jobs:
           ${{ env.FIRMWARE }}/*.bin
           Airoha/build.config
 
-    - name: Remove old Releases and Workflows
+    - name: 删除旧版本（Releases）和工作流（Workflows）
       uses: ophub/delete-releases-workflows@main
       if: env.UPLOAD_RELEASE == 'true' && !cancelled()
       with:
